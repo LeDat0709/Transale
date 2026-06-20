@@ -9,8 +9,13 @@ from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
-# Thêm thư mục gốc vào path để import
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Thêm thư mục gốc vào path để import.
+# Hỗ trợ cả layout local (project_root/web_app/backend/main.py -> 3 cấp)
+# lẫn layout trong Docker (/app/backend/main.py, module ở /app -> 2 cấp).
+_here = os.path.dirname(os.path.abspath(__file__))
+for _candidate in (os.path.dirname(_here), os.path.dirname(os.path.dirname(_here))):
+    if _candidate not in sys.path:
+        sys.path.append(_candidate)
 import translate_sheet_range
 
 app = FastAPI()
