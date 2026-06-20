@@ -14,8 +14,11 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_bufferin
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', line_buffering=True)
 
 # ----- CẤU HÌNH -----
-TARGET_LANG = 'de' 
-TOKEN_FILE = 'token.json'
+TARGET_LANG = 'de'
+# Đường dẫn tuyệt đối tới token.json (cạnh file này). App chạy với cwd
+# /app/backend trong Docker nên đường dẫn tương đối 'token.json' sẽ không
+# tìm thấy file ở /app/token.json -> phải neo theo vị trí module.
+TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'token.json')
 SHEET_ID = '1szAxSMvyYhoTRrRUudhKsYYemDxZWJpl2RUeRttCRbc'
 SOURCE_TAB = 'Đạt _ Đức'
 TARGET_TAB = 'Đạt_Mỹ'
