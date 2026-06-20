@@ -5,6 +5,7 @@ import time
 import json
 from deep_translator import GoogleTranslator
 from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
@@ -33,29 +34,39 @@ COLUMNS_TO_TRANSLATE = {
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 def load_google_sheets():
-    creds = None
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, 'r', encoding='utf-8') as f:
-            d = json.load(f)
-        creds = Credentials(
-            token=d.get('token'), refresh_token=d.get('refresh_token'),
-            token_uri=d.get('token_uri'), client_id=d.get('client_id'),
-            client_secret=d.get('client_secret'), scopes=d.get('scopes') or SCOPES,
+    if not os.path.exists(TOKEN_FILE):
+        raise RuntimeError(
+            f"Không tìm thấy file {TOKEN_FILE}. Hãy đặt file credential "
+            f"(Service Account hoặc OAuth user token) cạnh ứng dụng."
         )
-    if not creds or not creds.valid:
+
+    with open(TOKEN_FILE, 'r', encoding='utf-8') as f:
+        d = json.load(f)
+
+    # --- Service Account (khuyên dùng cho server): không hết hạn ---
+    # Nhận biết qua trường "type": "service_account".
+    if d.get('type') == 'service_account':
+        creds = ServiceAccountCredentials.from_service_account_info(d, scopes=SCOPES)
+        return build('sheets', 'v4', credentials=creds).spreadsheets()
+
+    # --- OAuth user token (authorized_user) ---
+    creds = Credentials(
+        token=d.get('token'), refresh_token=d.get('refresh_token'),
+        token_uri=d.get('token_uri'), client_id=d.get('client_id'),
+        client_secret=d.get('client_secret'), scopes=d.get('scopes') or SCOPES,
+    )
+    if not creds.valid:
         # Refresh bất cứ khi nào token không hợp lệ mà vẫn còn refresh_token.
-        # Không dựa vào creds.expired vì token.json không nạp 'expiry' nên
-        # creds.expired luôn False -> trước đây không bao giờ refresh được.
-        if creds and creds.refresh_token:
+        # Không dựa vào creds.expired vì token.json có thể không nạp 'expiry'.
+        if creds.refresh_token:
             creds.refresh(Request())
             with open(TOKEN_FILE, 'w', encoding='utf-8') as f:
                 f.write(creds.to_json())
         else:
-            # Không sys.exit() ở đây: ném lỗi rõ ràng để caller bắt được và
-            # đẩy lên web console thay vì thoát âm thầm.
+            # Ném lỗi rõ ràng để caller bắt được và đẩy lên web console.
             raise RuntimeError(
-                f"File {TOKEN_FILE} không hợp lệ hoặc đã hết hạn "
-                f"(thiếu token/refresh_token). Hãy tạo lại token.json hợp lệ."
+                f"File {TOKEN_FILE} là OAuth user token nhưng thiếu refresh_token "
+                f"(token đã hỏng/hết hạn). Hãy dùng Service Account hoặc tạo lại token.json."
             )
     return build('sheets', 'v4', credentials=creds).spreadsheets()
 
