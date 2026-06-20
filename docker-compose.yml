@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: web_app/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    restart: always
+    volumes:
+      - ./token.json:/app/token.json
+      - ./translate_sheet_range.py:/app/translate_sheet_range.py
+
+  frontend:
+    build:
+      context: ./web_app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - backend
