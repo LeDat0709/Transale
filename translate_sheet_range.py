@@ -48,8 +48,12 @@ def load_google_sheets():
             with open(TOKEN_FILE, 'w', encoding='utf-8') as f:
                 f.write(creds.to_json())
         else:
-            print(f"❌ Lỗi: File {TOKEN_FILE} không hợp lệ!")
-            sys.exit(1)
+            # Không sys.exit() ở đây: ném lỗi rõ ràng để caller bắt được và
+            # đẩy lên web console thay vì thoát âm thầm.
+            raise RuntimeError(
+                f"File {TOKEN_FILE} không hợp lệ hoặc đã hết hạn "
+                f"(thiếu token/refresh_token). Hãy tạo lại token.json hợp lệ."
+            )
     return build('sheets', 'v4', credentials=creds).spreadsheets()
 
 def translate_long_text(text):

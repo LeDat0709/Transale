@@ -61,8 +61,9 @@ def run_translation_task(req: TranslateRequest):
             auto_mode=req.auto_mode,
             stop_event=stop_event
         )
-    except Exception as e:
-        log_callback(f"❌ Lỗi hệ thống: {e}")
+    except BaseException as e:
+        # Bắt cả SystemExit để lỗi luôn hiện trên web console, không thoát âm thầm.
+        log_callback(f"❌ Lỗi hệ thống: {type(e).__name__}: {e}")
     finally:
         is_running = False
         log_callback("[DONE]")
