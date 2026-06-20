@@ -43,7 +43,10 @@ def load_google_sheets():
             client_secret=d.get('client_secret'), scopes=d.get('scopes') or SCOPES,
         )
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+        # Refresh bất cứ khi nào token không hợp lệ mà vẫn còn refresh_token.
+        # Không dựa vào creds.expired vì token.json không nạp 'expiry' nên
+        # creds.expired luôn False -> trước đây không bao giờ refresh được.
+        if creds and creds.refresh_token:
             creds.refresh(Request())
             with open(TOKEN_FILE, 'w', encoding='utf-8') as f:
                 f.write(creds.to_json())
