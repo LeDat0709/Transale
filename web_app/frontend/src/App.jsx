@@ -162,6 +162,7 @@ export default function App() {
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                     />
                   </div>
+                </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Danh Sách Bảng Đích</label>
