@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Square, Settings2, Terminal, RefreshCw, RotateCcw, Zap } from 'lucide-react';
+import { Play, Square, Settings2, Terminal, RefreshCw, RotateCcw, Zap, Plus, X } from 'lucide-react';
 
 export default function App() {
   const [config, setConfig] = useState({
     sheet_id: '1szAxSMvyYhoTRrRUudhKsYYemDxZWJpl2RUeRttCRbc',
     source_tab: 'Đạt _ Đức',
-    target_tab: 'Đạt_Mỹ',
+    targets: [
+      { tab: 'Đạt_Mỹ', lang: 'de' },
+      { tab: 'Đạt_Mexico', lang: 'es' }
+    ],
     start_row: 1197,
     end_row: 1500,
     auto_mode: false
@@ -14,6 +17,22 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState(["Hệ thống đã sẵn sàng."]);
   const endOfLogsRef = useRef(null);
+
+  const handleTargetChange = (index, field, value) => {
+    const newTargets = [...config.targets];
+    newTargets[index][field] = value;
+    setConfig({ ...config, targets: newTargets });
+  };
+
+  const addTarget = () => {
+    setConfig({ ...config, targets: [...config.targets, { tab: '', lang: 'de' }] });
+  };
+
+  const removeTarget = (index) => {
+    if (config.targets.length <= 1) return;
+    const newTargets = config.targets.filter((_, i) => i !== index);
+    setConfig({ ...config, targets: newTargets });
+  };
 
   useEffect(() => {
     endOfLogsRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,16 +162,53 @@ export default function App() {
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Tab Đích</label>
-                    <input 
-                      type="text" 
-                      value={config.target_tab}
-                      onChange={e => setConfig({...config, target_tab: e.target.value})}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Danh Sách Bảng Đích</label>
+                    <button 
+                      onClick={addTarget}
                       disabled={isRunning}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                    />
+                      className="text-xs bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-2 py-1 rounded flex items-center space-x-1 disabled:opacity-50"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Thêm Đích</span>
+                    </button>
                   </div>
+                  
+                  {config.targets.map((tgt, index) => (
+                    <div key={index} className="flex space-x-2 items-center bg-neutral-950 p-2 rounded-md border border-neutral-800 relative group">
+                      <div className="flex-1 space-y-1">
+                        <input 
+                          type="text" 
+                          placeholder="Tên Tab Đích"
+                          value={tgt.tab}
+                          onChange={e => handleTargetChange(index, 'tab', e.target.value)}
+                          disabled={isRunning}
+                          className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <select 
+                          value={tgt.lang}
+                          onChange={e => handleTargetChange(index, 'lang', e.target.value)}
+                          disabled={isRunning}
+                          className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                        >
+                          <option value="de">Đức (de)</option>
+                          <option value="es">Mexico (es)</option>
+                          <option value="en">Anh (en)</option>
+                          <option value="fr">Pháp (fr)</option>
+                        </select>
+                      </div>
+                      <button 
+                        onClick={() => removeTarget(index)}
+                        disabled={isRunning || config.targets.length <= 1}
+                        className="p-1.5 text-neutral-500 hover:text-red-400 disabled:opacity-30 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
 
                 <div className={`grid ${config.auto_mode ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>

@@ -34,11 +34,15 @@ log_queue = queue.Queue()
 def log_callback(msg: str):
     log_queue.put(msg)
 
+class TargetConfig(BaseModel):
+    tab: str
+    lang: str
+
 class TranslateRequest(BaseModel):
     start_row: int
     end_row: int
     source_tab: str
-    target_tab: str
+    targets: list[TargetConfig]
     sheet_id: str
     auto_mode: bool = False
 
@@ -55,7 +59,7 @@ def run_translation_task(req: TranslateRequest):
             start_row=req.start_row,
             end_row=req.end_row,
             source_tab=req.source_tab,
-            target_tab=req.target_tab,
+            targets=[{"tab": t.tab, "lang": t.lang} for t in req.targets],
             sheet_id=req.sheet_id,
             log_callback=log_callback,
             auto_mode=req.auto_mode,

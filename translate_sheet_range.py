@@ -73,11 +73,11 @@ def load_google_sheets():
             )
     return build('sheets', 'v4', credentials=creds).spreadsheets()
 
-def translate_long_text(text):
+def translate_long_text(text, target_lang=TARGET_LANG):
     if not text or not str(text).strip():
         return text
         
-    translator = GoogleTranslator(source='auto', target=TARGET_LANG)
+    translator = GoogleTranslator(source='auto', target=target_lang)
     limit = 4500
     if len(text) <= limit:
         try:
@@ -106,7 +106,9 @@ def translate_long_text(text):
             
     return "\n\n".join(translated_chunks)
 
-def main(start_row=START_ROW, end_row=END_ROW, source_tab=SOURCE_TAB, target_tab=TARGET_TAB, sheet_id=SHEET_ID, log_callback=None, auto_mode=False, stop_event=None):
+def main(start_row=START_ROW, end_row=END_ROW, source_tab=SOURCE_TAB, targets=None, sheet_id=SHEET_ID, log_callback=None, auto_mode=False, stop_event=None):
+    if targets is None:
+        targets = [{'tab': TARGET_TAB, 'lang': TARGET_LANG}]
     def log(msg, end="\n"):
         print(msg, end=end, flush=True)
         if log_callback: log_callback(msg + end)
@@ -163,19 +165,22 @@ def main(start_row=START_ROW, end_row=END_ROW, source_tab=SOURCE_TAB, target_tab
                 if col_idx < len(row):
                     original_text = row[col_idx]
                     if original_text and len(original_text.strip()) > 10:
-                        log(f"   + Dịch Cột {col_letter} ({len(original_text):,} chars)... ", end="")
-                        t0 = time.time()
-                        translated = translate_long_text(original_text)
-                        t1 = time.time()
-                        log(f"Xong ({round(t1-t0, 1)}s)")
-                        
-                        updates.append({
-                            'range': f"'{target_tab}'!{col_letter}{sheet_row_number}",
-                            'values': [[translated]]
-                        })
+                        for tgt in targets:
+                            tgt_tab = tgt['tab']
+                            tgt_lang = tgt['lang']
+                            log(f"   + Dịch Cột {col_letter} sang {tgt_lang} ({len(original_text):,} chars)... ", end="")
+                            t0 = time.time()
+                            translated = translate_long_text(original_text, target_lang=tgt_lang)
+                            t1 = time.time()
+                            log(f"Xong ({round(t1-t0, 1)}s)")
+                            
+                            updates.append({
+                                'range': f"'{tgt_tab}'!{col_letter}{sheet_row_number}",
+                                'values': [[translated]]
+                            })
                         
             if updates:
-                log(f"   ☁️ Đang ghi đè lên Google Sheet ({target_tab})...")
+                log(f"   ☁️ Đang ghi đè lên Google Sheet ({len(targets)} tabs)...")
                 try:
                     sheets_api.values().batchUpdate(
                         spreadsheetId=sheet_id,
